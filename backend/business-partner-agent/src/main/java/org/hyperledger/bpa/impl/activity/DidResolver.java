@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hyperledger.aries.api.exception.AriesException;
 import org.hyperledger.aries.api.resolver.DIDDocument;
+import org.hyperledger.bpa.api.CredentialType;
 import org.hyperledger.bpa.api.PartnerAPI;
 import org.hyperledger.bpa.api.exception.PartnerException;
 import org.hyperledger.bpa.client.DidDocClient;
@@ -38,6 +39,8 @@ import org.hyperledger.bpa.repository.PartnerRepository;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Optional;
+
+import static org.hyperledger.bpa.api.CredentialType.ORGANIZATIONAL_PROFILE_CREDENTIAL;
 
 /**
  * Special usecase to resolve a partners public did and profile in case of an
@@ -92,6 +95,7 @@ public class DidResolver {
                                 p.setDid(pubDid.toString());
                                 p.setValid(pAPI.getValid());
                                 p.setVerifiablePresentation(converter.toMap(pAPI.getVerifiablePresentation()));
+                                p.setLabel("");
                                 partnerRepo.update(p);
                             }
                         }
@@ -129,6 +133,14 @@ public class DidResolver {
                         pAPI.getValid(),
                         cl.getLabel(),
                         did);
+                //todo check the code
+                Optional<PartnerAPI.PartnerCredential> publicProfileCred = pAPI.getCredential().stream()
+                        .filter(cred -> cred.getType() == ORGANIZATIONAL_PROFILE_CREDENTIAL)
+                        .findFirst();
+                publicProfileCred.ifPresent(cred -> {
+                    p.setLabel(cred.getCredentialData().get("legalName").asText(p.getLabel()));
+                    partnerRepo.update(p);
+                });
                 webhook.convertAndSend(RegisteredWebhook.WebhookEventType.PARTNER_ADD, pAPI);
             });
         });

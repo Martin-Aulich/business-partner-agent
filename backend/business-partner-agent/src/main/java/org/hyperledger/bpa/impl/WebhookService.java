@@ -121,7 +121,7 @@ public class WebhookService {
                     try (Response response = okClient.newCall(request.build()).execute()) {
                         if (!response.isSuccessful()) {
                             String body = response.body() != null ? response.body().toString() : "";
-                            log.error("Call to {} falied, code: {}, msg: {}",
+                            log.error("Call to {} failed, code: {}, msg: {}",
                                     hook.getUrl(), response.code(), body);
                         }
                     } catch (IOException ex) {
